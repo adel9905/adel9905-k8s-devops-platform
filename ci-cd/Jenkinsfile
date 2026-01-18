@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AWS_DEFAULT_REGION = "ap-south-1"     // MUST match Terraform
-        CLUSTER_NAME       = "demo"           // MUST match Terraform
+        CLUSTER_NAME       = "staging-demo"           // MUST match Terraform
         SONAR_PROJECT_KEY  = "k8s-devops-project"
         DOCKER_IMAGE       = "k8s-demo-app"
         TF_DIR             = "tf_code"
