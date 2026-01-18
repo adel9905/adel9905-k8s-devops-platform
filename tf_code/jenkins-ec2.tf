@@ -5,7 +5,7 @@ resource "aws_instance" "jenkins" {
   vpc_security_group_ids      = [aws_security_group.jenkins.id]
   iam_instance_profile        = aws_iam_instance_profile.jenkins.name
   associate_public_ip_address = true
-  key_name                    = "jenkins-key" # must exist
+  key_name                    = aws_key_pair.jenkins.key_name
 
   user_data = <<-EOF
               #!/bin/bash
