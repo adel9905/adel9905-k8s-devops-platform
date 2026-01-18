@@ -2,8 +2,8 @@ pipeline {
     agent { label 'common' }
 
     environment {
-        AWS_DEFAULT_REGION = "ap-south-1"     // MUST match Terraform
-        CLUSTER_NAME       = "staging-demo"           // MUST match Terraform
+        AWS_DEFAULT_REGION = "ap-south-1"
+        CLUSTER_NAME       = "staging-demo"
         SONAR_PROJECT_KEY  = "k8s-devops-project"
         DOCKER_IMAGE       = "k8s-demo-app"
         TF_DIR             = "tf_code"
@@ -18,8 +18,7 @@ pipeline {
 
         stage('Checkout Source Code') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/adel9905/Kubernetes-DevOps-Hands-On-Project-CI-CD-Scaling-Security-and-Resource-Management.git'
+                checkout scm
             }
         }
 
@@ -31,26 +30,18 @@ pipeline {
                   kubectl version --client
                   aws --version
                   trivy --version
+                  aws sts get-caller-identity
                 '''
             }
         }
 
-        /* =========================
-           TERRAFORM – AWS + EKS
-           ========================= */
-
-        stage('Terraform Init') {
+        stage('Terraform Init & Validate') {
             steps {
                 dir("${TF_DIR}") {
-                    sh 'terraform init'
-                }
-            }
-        }
-
-        stage('Terraform Validate') {
-            steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform validate'
+                    sh '''
+                      terraform init -upgrade
+                      terraform validate
+                    '''
                 }
             }
         }
@@ -58,7 +49,7 @@ pipeline {
         stage('Terraform Apply (AWS + EKS)') {
             steps {
                 dir("${TF_DIR}") {
-                    sh 'terraform apply -auto-approve'
+                    sh 'terraform apply -auto-approve -input=false'
                 }
             }
         }
@@ -69,13 +60,10 @@ pipeline {
                   aws eks update-kubeconfig \
                     --region ${AWS_DEFAULT_REGION} \
                     --name ${CLUSTER_NAME}
+                  kubectl get nodes
                 '''
             }
         }
-
-        /* =========================
-           CODE QUALITY & SECURITY
-           ========================= */
 
         stage('SonarQube Code Scan') {
             environment {
@@ -83,12 +71,11 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh """
+                    sh '''
                       sonar-scanner \
                         -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                        -Dsonar.sources=. \
-                        -Dsonar.login=${SONAR_TOKEN}
-                    """
+                        -Dsonar.sources=.
+                    '''
                 }
             }
         }
@@ -113,32 +100,22 @@ pipeline {
             }
         }
 
-        /* =========================
-           KUBERNETES DEPLOYMENT
-           ========================= */
-
-        stage('Deploy Kubernetes Manifests') {
-            steps {
-                sh 'kubectl apply -f kubernetes/'
-            }
-        }
-
-        /* =========================
-           MONITORING & ALERTING
-           ========================= */
-
-        stage('Install Prometheus & Grafana') {
+        stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                  chmod +x monitoring/install.sh
-                  ./monitoring/install.sh
+                  kubectl apply -f kubernetes/
+                  kubectl rollout status deployment --all
                 '''
             }
         }
 
-        stage('Apply Prometheus Alerting Rules') {
+        stage('Monitoring Setup') {
             steps {
-                sh 'kubectl apply -f monitoring/alerts/'
+                sh '''
+                  chmod +x monitoring/install.sh
+                  ./monitoring/install.sh
+                  kubectl apply -f monitoring/alerts/
+                '''
             }
         }
     }
