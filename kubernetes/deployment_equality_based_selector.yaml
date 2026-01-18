@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-deployment
+  labels:
+    app: payment
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:          # equality-based selector
+      app: payment
+      tier: backend
+  template:
+    metadata:
+      labels:             # must include all matchLabels
+        app: payment
+        tier: backend
+        environment: prod
+    spec:
+      containers:
+        - name: payment-api
+          image: nginx:1.27
+          ports:
+            - containerPort: 80

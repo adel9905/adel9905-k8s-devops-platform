@@ -1,0 +1,61 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kubernetes-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: kubernetes.rules
+      rules:
+        - alert: PodHighCPUUsage
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace) > 0.8
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage on pod {{ $labels.pod }}"
+            description: "Pod {{ $labels.pod }} is consuming more than 80% CPU."
+
+        - alert: PodHighMemoryUsage
+          expr: |
+            container_memory_working_set_bytes
+            / container_spec_memory_limit_bytes > 0.8
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage on pod {{ $labels.pod }}"
+            description: "Pod {{ $labels.pod }} is using more than 80% of memory limit."
+
+        - alert: PodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total[5m]) > 3
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash looping"
+            description: "Pod restarted more than 3 times in 5 minutes."
+
+        - alert: NodeHighCPUUsage
+          expr: |
+            avg(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (instance) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage on node {{ $labels.instance }}"
+            description: "Node CPU usage is above 85%."
+
+        - alert: HPAReachedMaxReplicas
+          expr: |
+            kube_hpa_status_current_replicas == kube_hpa_spec_max_replicas
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HPA reached max replicas"
+            description: "HPA {{ $labels.hpa }} reached maximum replicas."

@@ -1,0 +1,154 @@
+pipeline {
+    agent { label 'common' }
+
+    environment {
+        AWS_DEFAULT_REGION = "ap-south-1"     // MUST match Terraform
+        CLUSTER_NAME       = "demo"           // MUST match Terraform
+        SONAR_PROJECT_KEY  = "k8s-devops-project"
+        DOCKER_IMAGE       = "k8s-demo-app"
+        TF_DIR             = "tf_code"
+    }
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    stages {
+
+        stage('Checkout Source Code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/adel9905/Kubernetes-DevOps-Hands-On-Project-CI-CD-Scaling-Security-and-Resource-Management.git'
+            }
+        }
+
+        stage('Verify Tooling') {
+            steps {
+                sh '''
+                  terraform --version
+                  docker --version
+                  kubectl version --client
+                  aws --version
+                  trivy --version
+                '''
+            }
+        }
+
+        /* =========================
+           TERRAFORM – AWS + EKS
+           ========================= */
+
+        stage('Terraform Init') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Validate') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform validate'
+                }
+            }
+        }
+
+        stage('Terraform Apply (AWS + EKS)') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Configure kubeconfig') {
+            steps {
+                sh '''
+                  aws eks update-kubeconfig \
+                    --region ${AWS_DEFAULT_REGION} \
+                    --name ${CLUSTER_NAME}
+                '''
+            }
+        }
+
+        /* =========================
+           CODE QUALITY & SECURITY
+           ========================= */
+
+        stage('SonarQube Code Scan') {
+            environment {
+                SONAR_TOKEN = credentials('sonarqube-token')
+            }
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh """
+                      sonar-scanner \
+                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                        -Dsonar.sources=. \
+                        -Dsonar.login=${SONAR_TOKEN}
+                    """
+                }
+            }
+        }
+
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t ${DOCKER_IMAGE}:latest .'
+            }
+        }
+
+        stage('Trivy Security Scan') {
+            steps {
+                sh 'trivy image --severity HIGH,CRITICAL --exit-code 1 ${DOCKER_IMAGE}:latest'
+            }
+        }
+
+        /* =========================
+           KUBERNETES DEPLOYMENT
+           ========================= */
+
+        stage('Deploy Kubernetes Manifests') {
+            steps {
+                sh 'kubectl apply -f kubernetes/'
+            }
+        }
+
+        /* =========================
+           MONITORING & ALERTING
+           ========================= */
+
+        stage('Install Prometheus & Grafana') {
+            steps {
+                sh '''
+                  chmod +x monitoring/install.sh
+                  ./monitoring/install.sh
+                '''
+            }
+        }
+
+        stage('Apply Prometheus Alerting Rules') {
+            steps {
+                sh 'kubectl apply -f monitoring/alerts/'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ FULL DEVOPS PIPELINE COMPLETED SUCCESSFULLY"
+        }
+        failure {
+            echo "❌ PIPELINE FAILED — CHECK LOGS"
+        }
+    }
+}

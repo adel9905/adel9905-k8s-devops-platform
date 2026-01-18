@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: php-redis
+  labels:
+    tier: frontend
+    app: guestbook
+spec:
+  containers:
+  - name: php-redis
+    image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+  
