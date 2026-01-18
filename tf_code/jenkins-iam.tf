@@ -60,3 +60,11 @@ resource "aws_eks_access_policy_association" "jenkins" {
     type = "cluster"
   }
 }
+########################################
+# SSM ACCESS FOR JENKINS EC2
+########################################
+
+resource "aws_iam_role_policy_attachment" "jenkins_ssm" {
+  role       = aws_iam_role.jenkins.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}

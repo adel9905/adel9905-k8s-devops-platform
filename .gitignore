@@ -16,3 +16,5 @@ terraform.tfvars
 # Credentials / keys
 *.pem
 *.key
+# SSH keys
+*.pem
