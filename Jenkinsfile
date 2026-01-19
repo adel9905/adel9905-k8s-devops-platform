@@ -36,21 +36,14 @@ pipeline {
             }
         }
 
-        stage('Terraform Init & Validate') {
+        stage('Terraform Init & Validate (NO APPLY)') {
             steps {
                 dir("${TF_DIR}") {
                     sh '''
                       terraform init -upgrade
                       terraform validate
+                      terraform plan || true
                     '''
-                }
-            }
-        }
-
-        stage('Terraform Apply (AWS + EKS)') {
-            steps {
-                dir("${TF_DIR}") {
-                    sh 'terraform apply -auto-approve -input=false'
                 }
             }
         }
@@ -110,7 +103,7 @@ pipeline {
             }
         }
 
-        stage('Monitoring Setup') {
+        stage('Monitoring Setup (Prometheus + Grafana)') {
             steps {
                 sh '''
                   chmod +x monitoring/install.sh
