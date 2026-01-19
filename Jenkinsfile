@@ -98,17 +98,14 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                  # Create namespace & governance first
+                  echo "Applying Kubernetes manifests..."
+
                   kubectl apply -f kubernetes/namespace.yaml
                   kubectl apply -f kubernetes/limitrange.yaml
                   kubectl apply -f kubernetes/resourcequota.yaml
 
-                  # Deploy workloads only (no quota test pod)
-                  kubectl apply -f kubernetes/deployments/
-                  kubectl apply -f kubernetes/pods/
-                  kubectl apply -f kubernetes/services/
+                  kubectl apply -f kubernetes/
 
-                  # Verify rollout
                   kubectl rollout status deployment --all -n ${K8S_NAMESPACE}
                 '''
             }
