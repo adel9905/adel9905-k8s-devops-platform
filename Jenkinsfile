@@ -36,13 +36,12 @@ pipeline {
             }
         }
 
-        stage('Terraform Init & Validate (NO APPLY)') {
+        stage('Terraform Init & Validate (NO BACKEND)') {
             steps {
                 dir("${TF_DIR}") {
                     sh '''
-                      terraform init -upgrade
+                      terraform init -backend=false
                       terraform validate
-                      terraform plan || true
                     '''
                 }
             }
@@ -90,7 +89,12 @@ pipeline {
 
         stage('Trivy Security Scan') {
             steps {
-                sh 'trivy image --severity HIGH,CRITICAL --exit-code 1 ${DOCKER_IMAGE}:latest'
+                sh '''
+                  trivy image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 1 \
+                    ${DOCKER_IMAGE}:latest
+                '''
             }
         }
 
