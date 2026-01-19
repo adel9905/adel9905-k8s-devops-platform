@@ -36,10 +36,11 @@ pipeline {
             }
         }
 
-        stage('Terraform Init & Validate (NO BACKEND)') {
+        stage('Terraform Validate (CI SAFE)') {
             steps {
                 dir("${TF_DIR}") {
                     sh '''
+                      rm -f backend.tf || true
                       terraform init -backend=false
                       terraform validate
                     '''
@@ -120,7 +121,7 @@ pipeline {
 
     post {
         success {
-            echo "✅ FULL DEVOPS PIPELINE COMPLETED SUCCESSFULLY"
+            echo "✅ ADEL FULL DEVOPS PIPELINE COMPLETED SUCCESSFULLY"
         }
         failure {
             echo "❌ PIPELINE FAILED — CHECK LOGS"
