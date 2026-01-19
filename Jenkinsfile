@@ -72,23 +72,36 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${DOCKER_IMAGE}:latest .'
+                sh '''
+                  docker build -t ${DOCKER_IMAGE}:latest .
+                '''
             }
         }
 
         stage('Trivy Security Scan') {
             steps {
-                sh 'trivy image --severity HIGH,CRITICAL --exit-code 1 ${DOCKER_IMAGE}:latest'
+                sh '''
+                  trivy image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 1 \
+                    ${DOCKER_IMAGE}:latest
+                '''
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
+                  # Apply namespace FIRST (critical)
+                  kubectl apply -f kubernetes/namespace.yaml
+
+                  # Apply all other Kubernetes manifests
                   kubectl apply -f kubernetes/
+
+                  # Wait for deployments to be ready
                   kubectl rollout status deployment --all
                 '''
             }
