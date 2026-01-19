@@ -1,6 +1,6 @@
 resource "aws_security_group" "sonarqube" {
   name        = "${local.env}-sonarqube-sg"
-  description = "Allow SonarQube UI access"
+  description = "Allow SonarQube UI"
   vpc_id      = aws_vpc.main.id
 
   ingress {
