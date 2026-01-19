@@ -1,5 +1,5 @@
 pipeline {
-    agent { any }
+    agent any
 
     environment {
         AWS_DEFAULT_REGION = "ap-south-1"
@@ -30,6 +30,7 @@ pipeline {
                   kubectl version --client
                   aws --version
                   trivy --version
+                  sonar-scanner --version
                   aws sts get-caller-identity
                 '''
             }
