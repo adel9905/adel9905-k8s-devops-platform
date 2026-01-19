@@ -7,6 +7,7 @@ pipeline {
         SONAR_PROJECT_KEY  = "k8s-devops-project"
         DOCKER_IMAGE       = "k8s-demo-app"
         TF_DIR             = "tf_code"
+        K8S_NAMESPACE      = "trainxops"
     }
 
     options {
@@ -53,6 +54,8 @@ pipeline {
                   aws eks update-kubeconfig \
                     --region ${AWS_DEFAULT_REGION} \
                     --name ${CLUSTER_NAME}
+
+                  kubectl cluster-info
                   kubectl get nodes
                 '''
             }
@@ -95,14 +98,18 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                  # Apply namespace FIRST (critical)
+                  # Create namespace & governance first
                   kubectl apply -f kubernetes/namespace.yaml
+                  kubectl apply -f kubernetes/limitrange.yaml
+                  kubectl apply -f kubernetes/resourcequota.yaml
 
-                  # Apply all other Kubernetes manifests
-                  kubectl apply -f kubernetes/
+                  # Deploy workloads only (no quota test pod)
+                  kubectl apply -f kubernetes/deployments/
+                  kubectl apply -f kubernetes/pods/
+                  kubectl apply -f kubernetes/services/
 
-                  # Wait for deployments to be ready
-                  kubectl rollout status deployment --all
+                  # Verify rollout
+                  kubectl rollout status deployment --all -n ${K8S_NAMESPACE}
                 '''
             }
         }
