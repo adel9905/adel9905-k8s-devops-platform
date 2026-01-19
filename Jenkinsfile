@@ -103,10 +103,13 @@ pipeline {
                   kubectl apply -f kubernetes/namespace.yaml
                   kubectl apply -f kubernetes/limitrange.yaml
                   kubectl apply -f kubernetes/resourcequota.yaml
-
                   kubectl apply -f kubernetes/
 
-                  kubectl rollout status deployment --all -n ${K8S_NAMESPACE}
+                  echo "Waiting for deployments to be ready..."
+
+                  for deploy in $(kubectl get deployments -n ${K8S_NAMESPACE} -o name); do
+                    kubectl rollout status $deploy -n ${K8S_NAMESPACE}
+                  done
                 '''
             }
         }
