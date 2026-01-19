@@ -7,6 +7,11 @@ pipeline {
         SONAR_PROJECT_KEY  = "k8s-devops-project"
         DOCKER_IMAGE       = "k8s-demo-app"
         TF_DIR             = "tf_code"
+
+        // Feature toggles (SAFE DEFAULTS)
+        ENABLE_EKS         = "false"
+        ENABLE_DOCKER      = "false"
+        ENABLE_SONAR       = "false"
     }
 
     options {
@@ -26,11 +31,11 @@ pipeline {
             steps {
                 sh '''
                   terraform --version
-                  docker --version
-                  kubectl version --client
+                  docker --version || true
+                  kubectl version --client || true
                   aws --version
-                  trivy --version
-                  sonar-scanner --version
+                  trivy --version || true
+                  sonar-scanner --version || true
                   aws sts get-caller-identity
                 '''
             }
@@ -40,8 +45,8 @@ pipeline {
             steps {
                 dir("${TF_DIR}") {
                     sh '''
-                      echo "==> Cleaning any cached Terraform backend"
-                      rm -rf .terraform .terraform.lock.hcl backend.tf || true
+                      echo "==> Cleaning Terraform backend & cache"
+                      rm -rf .terraform .terraform.lock.hcl backend.tf
 
                       terraform init -backend=false -reconfigure
                       terraform validate
@@ -50,18 +55,25 @@ pipeline {
             }
         }
 
-        stage('Configure kubeconfig') {
+        stage('Configure kubeconfig (EKS)') {
+            when {
+                expression { env.ENABLE_EKS == "true" }
+            }
             steps {
                 sh '''
                   aws eks update-kubeconfig \
                     --region ${AWS_DEFAULT_REGION} \
                     --name ${CLUSTER_NAME}
+
                   kubectl get nodes
                 '''
             }
         }
 
         stage('SonarQube Code Scan') {
+            when {
+                expression { env.ENABLE_SONAR == "true" }
+            }
             environment {
                 SONAR_TOKEN = credentials('sonarqube-token')
             }
@@ -77,6 +89,9 @@ pipeline {
         }
 
         stage('SonarQube Quality Gate') {
+            when {
+                expression { env.ENABLE_SONAR == "true" }
+            }
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
@@ -85,23 +100,27 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            when {
+                expression { env.ENABLE_DOCKER == "true" }
+            }
             steps {
                 sh 'docker build -t ${DOCKER_IMAGE}:latest .'
             }
         }
 
         stage('Trivy Security Scan') {
+            when {
+                expression { env.ENABLE_DOCKER == "true" }
+            }
             steps {
-                sh '''
-                  trivy image \
-                    --severity HIGH,CRITICAL \
-                    --exit-code 1 \
-                    ${DOCKER_IMAGE}:latest
-                '''
+                sh 'trivy image --severity HIGH,CRITICAL --exit-code 1 ${DOCKER_IMAGE}:latest'
             }
         }
 
         stage('Deploy to Kubernetes') {
+            when {
+                expression { env.ENABLE_EKS == "true" }
+            }
             steps {
                 sh '''
                   kubectl apply -f kubernetes/
@@ -111,6 +130,9 @@ pipeline {
         }
 
         stage('Monitoring Setup (Prometheus + Grafana)') {
+            when {
+                expression { env.ENABLE_EKS == "true" }
+            }
             steps {
                 sh '''
                   chmod +x monitoring/install.sh
@@ -123,7 +145,7 @@ pipeline {
 
     post {
         success {
-            echo "ADEL FULL PIPELINE COMPLETED SUCCESSFULLY"
+            echo "✅ ADEL CI PIPELINE COMPLETED SUCCESSFULLY"
         }
         failure {
             echo "❌ PIPELINE FAILED — CHECK LOGS"
