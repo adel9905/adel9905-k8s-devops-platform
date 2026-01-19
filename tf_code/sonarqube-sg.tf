@@ -4,11 +4,11 @@ resource "aws_security_group" "sonarqube" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "SonarQube UI"
+    description = "SonarQube UI - TEMP OPEN FOR DEMO"
     from_port   = 9000
     to_port     = 9000
     protocol    = "tcp"
-    cidr_blocks = ["194.9.78.40/32"]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
