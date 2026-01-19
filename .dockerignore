@@ -1,0 +1,11 @@
+.git
+.gitignore
+.scannerwork
+.terraform
+terraform.tfstate
+terraform.tfstate.backup
+node_modules
+vendor
+*.log
+*.tmp
+tf_code
