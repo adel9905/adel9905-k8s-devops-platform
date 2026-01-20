@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-deployment
+  namespace: trainxops
   labels:
     app: payment
     tier: backend
@@ -21,6 +22,14 @@ spec:
       containers:
         - name: payment-api
           image: nginx:1.27
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
 #This deployment uses equality-based selectors (matchLabels) — the standard approach for clean, predictable pod ownership

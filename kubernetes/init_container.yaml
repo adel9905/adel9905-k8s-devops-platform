@@ -2,16 +2,20 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: web-server-pod
+  namespace: trainxops
+  labels:
+    app: web
+    purpose: init-container-demo
 spec:
   initContainers:
     - name: write-ip
-      image: busybox
+      image: busybox:1.36
       command:
-        [
-          "sh",
-          "-c",
-          "echo $MY_POD_IP > /web-content/ip.txt; echo 'Wrote the Pod IP to ip.txt'",
-        ]
+        - sh
+        - -c
+        - |
+          echo "$MY_POD_IP" > /web-content/ip.txt
+          echo "Wrote the Pod IP to ip.txt"
       env:
         - name: MY_POD_IP
           valueFrom:
@@ -20,23 +24,37 @@ spec:
       volumeMounts:
         - name: web-content
           mountPath: /web-content
+
     - name: create-html
-      image: busybox
+      image: busybox:1.36
       command:
-        [
-          "sh",
-          "-c",
-          "echo 'Hello, World! Your Pod IP is: ' > /web-content/index.html; cat /web-content/ip.txt >> /web-content/index.html; echo 'Created index.html with the Pod IP'",
-        ]
+        - sh
+        - -c
+        - |
+          echo "Hello, World! Your Pod IP is:" > /web-content/index.html
+          cat /web-content/ip.txt >> /web-content/index.html
+          echo "Created index.html with the Pod IP"
       volumeMounts:
         - name: web-content
           mountPath: /web-content
+
   containers:
     - name: web-container
-      image: nginx
+      image: nginx:1.27
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 80
       volumeMounts:
         - name: web-content
           mountPath: /usr/share/nginx/html
+      resources:
+        requests:
+          cpu: "50m"
+          memory: "64Mi"
+        limits:
+          cpu: "250m"
+          memory: "128Mi"
+
   volumes:
     - name: web-content
       emptyDir: {}

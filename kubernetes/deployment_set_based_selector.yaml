@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-deployment-set
+  namespace: trainxops
   labels:
     app: payment
     tier: backend
@@ -9,8 +10,8 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: payment # equality-based part
-    matchExpressions: # set-based selector
+      app: payment # equality-based selector (mandatory anchor)
+    matchExpressions: # set-based selectors (advanced filtering)
       - key: environment
         operator: In
         values:
@@ -21,7 +22,7 @@ spec:
         values:
           - frontend
       - key: team
-        operator: Exists # just requires the key to exist
+        operator: Exists
   template:
     metadata:
       labels:
@@ -33,6 +34,14 @@ spec:
       containers:
         - name: payment-api
           image: nginx:1.27
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
 #Set-based selectors are more flexible than matchLabels; they help in advanced label strategies, but you must avoid overly-broad selectors.
