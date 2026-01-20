@@ -7,6 +7,6 @@ metadata:
     app: guestbook
 spec:
   containers:
-  - name: php-redis
-    image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
-  
+    - name: php-redis
+      image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+  #Standalone pods are useful for testing but not recommended for production workloads.

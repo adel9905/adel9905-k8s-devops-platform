@@ -10,3 +10,4 @@ spec:
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 50
+  #This HPA is CPU-only for simplicity and stability; it’s a common first step before adding memory/custom metrics.

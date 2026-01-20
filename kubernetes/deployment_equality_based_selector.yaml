@@ -8,12 +8,12 @@ metadata:
 spec:
   replicas: 3
   selector:
-    matchLabels:          # equality-based selector
+    matchLabels: # equality-based selector
       app: payment
       tier: backend
   template:
     metadata:
-      labels:             # must include all matchLabels
+      labels: # must include all matchLabels
         app: payment
         tier: backend
         environment: prod
@@ -23,3 +23,4 @@ spec:
           image: nginx:1.27
           ports:
             - containerPort: 80
+#This deployment uses equality-based selectors (matchLabels) — the standard approach for clean, predictable pod ownership

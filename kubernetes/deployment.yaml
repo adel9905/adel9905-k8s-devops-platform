@@ -15,14 +15,16 @@ spec:
         app: nginx
     spec:
       containers:
-      - name: nginx
-        image: nginx:1.25.4
-        ports:
-        - containerPort: 80
-        resources:
-          requests:
-            memory: "32Mi"
-            cpu: "64m"
-          limits:
-            memory: "64Mi"
-            cpu: "128m"
+        - name: nginx
+          image: nginx:1.25.4
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "64m"
+            limits:
+              memory: "64Mi"
+              cpu: "128m"
+# Deployments define the desired state of applications and ensure availability through self-healing and rolling updates
+# Deployments provide self-healing, rolling updates, and declarative state management.

@@ -9,8 +9,8 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: payment        # equality-based part
-    matchExpressions:     # set-based selector
+      app: payment # equality-based part
+    matchExpressions: # set-based selector
       - key: environment
         operator: In
         values:
@@ -21,7 +21,7 @@ spec:
         values:
           - frontend
       - key: team
-        operator: Exists  # just requires the key to exist
+        operator: Exists # just requires the key to exist
   template:
     metadata:
       labels:
@@ -35,3 +35,4 @@ spec:
           image: nginx:1.27
           ports:
             - containerPort: 80
+#Set-based selectors are more flexible than matchLabels; they help in advanced label strategies, but you must avoid overly-broad selectors.

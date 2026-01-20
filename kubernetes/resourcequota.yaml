@@ -16,3 +16,4 @@ spec:
     configmaps: "10"
     secrets: "10"
     replicationcontrollers: "5"
+#ResourceQuota prevents a single namespace from consuming all cluster resources, which is essential in shared clusters

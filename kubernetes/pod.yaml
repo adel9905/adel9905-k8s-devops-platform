@@ -6,9 +6,10 @@ metadata:
   name: webserver-pod
 spec:
   containers:
-  - image: nginx
-    name: webserver-pod
-    resources: {}
+    - image: nginx
+      name: webserver-pod
+      resources: {}
   dnsPolicy: ClusterFirst
   restartPolicy: Always
 status: {}
+#Deployments describe how many replicas to run, what image to use, what labels to apply, and ensure self-healing if pods fail

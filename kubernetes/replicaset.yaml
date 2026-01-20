@@ -19,5 +19,6 @@ spec:
         app: guestbook
     spec:
       containers:
-      - name: php-redis
-        image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+        - name: php-redis
+          image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+#ReplicaSets maintain pod count, but in production I manage them through Deployments

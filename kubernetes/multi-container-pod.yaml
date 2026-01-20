@@ -6,22 +6,23 @@ metadata:
   name: multi-container-pod
 spec:
   containers:
-  - image: nginx
-    name: webserver
-    resources: {}
-    volumeMounts:
-    - name: nginx-logs
-      mountPath: /var/log/nginx
-  - name: log-reader
-    image: busybox
-    command: ["/bin/sh"]
-    args: ["-c", "tail -f /var/log/nginx/error.log"]
-    volumeMounts:
-    - name: nginx-logs
-      mountPath: /var/log/nginx
+    - image: nginx
+      name: webserver
+      resources: {}
+      volumeMounts:
+        - name: nginx-logs
+          mountPath: /var/log/nginx
+    - name: log-reader
+      image: busybox
+      command: ["/bin/sh"]
+      args: ["-c", "tail -f /var/log/nginx/error.log"]
+      volumeMounts:
+        - name: nginx-logs
+          mountPath: /var/log/nginx
   volumes:
-  - name: nginx-logs
-    emptyDir: {}
+    - name: nginx-logs
+      emptyDir: {}
   dnsPolicy: ClusterFirst
   restartPolicy: Always
 status: {}
+#In cases where tight container collaboration is needed (like sidecars), I’ve defined multi-container pods with shared context

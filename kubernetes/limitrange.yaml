@@ -5,19 +5,21 @@ metadata:
   namespace: trainxops
 spec:
   limits:
-  - max:
-      cpu: "1"
-      memory: "1Gi"
-    min:
-      cpu: "200m"
-      memory: "256Mi"
-    default:
-      cpu: "500m"
-      memory: "512Mi"
-    defaultRequest:
-      cpu: "300m"
-      memory: "300Mi"
-    maxLimitRequestRatio:
-      cpu: "2"
-      memory: "2"
-    type: Container
+    - max:
+        cpu: "1"
+        memory: "1Gi"
+      min:
+        cpu: "200m"
+        memory: "256Mi"
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "300m"
+        memory: "300Mi"
+      maxLimitRequestRatio:
+        cpu: "2"
+        memory: "2"
+      type: Container
+      #LimitRange enforces resource boundaries so containers can’t ask for too little or too much CPU/memory
+#This HPA is CPU-only for simplicity and stability; it’s a common first step before adding memory/custom metrics.
